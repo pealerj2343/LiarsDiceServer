@@ -6,6 +6,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Random;
 
 public class Server {
     private static int numberOfPlayers = 0;
@@ -39,15 +41,26 @@ class RunGame implements Runnable{
     private Socket p1;
     private Socket p2;
 
+    //default is 2 players
+    private int numOfPlayers = 2;
+
     private DataOutputStream p1Out;
     private DataInputStream p1In;
 
     private DataOutputStream p2Out;
     private DataInputStream p2In;
 
+    ArrayList<ArrayList<Dice>> Hands = new ArrayList<>();
+
+    int player1HandSize = 5;
+    int player2HandSize = 5;
+
+    ArrayList<Dice> poolOfDice = new ArrayList<>();
+
     public RunGame(Socket p1, Socket p2){
         this.p1 = p1;
         this.p2 = p2;
+        numOfPlayers = 2;
     }
 
     @Override
@@ -59,9 +72,40 @@ class RunGame implements Runnable{
             p2Out = new DataOutputStream(p2.getOutputStream());
             p2In = new DataInputStream(p2.getInputStream());
 
+            createPool();
+
+            //keeps game playing
+            while(player1HandSize > 0 || player2HandSize > 0){
+                rollDice();
+                Boolean accuse = false;
+                int lastFace = 0;
+                int lastNum = 0;
+                while(!accuse){
+                    int face = p1In.readInt();
+                    if(face == -1){
+                        accuse = true;
+                    }
+                }
+            }
 
         }catch (IOException ex){
 
+        }
+    }
+    private void rollDice(){
+        Random rand = new Random();
+        for(int i = 0 ; i < player1HandSize; i++){
+            Hands.get(0).add(poolOfDice.get(rand.nextInt(poolOfDice.size()+1)));
+            poolOfDice.trimToSize();
+        }
+        for(int i = 0 ; i < player2HandSize; i++){
+            Hands.get(1).add(poolOfDice.get(rand.nextInt(poolOfDice.size()+1)));
+            poolOfDice.trimToSize();
+        }
+    }
+    private void createPool(){
+        for(int i = 0 ; i < 5 * numOfPlayers; i++){
+            poolOfDice.add(new Dice());
         }
     }
 }
